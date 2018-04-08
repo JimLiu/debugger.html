@@ -1,3 +1,5 @@
+export * from "./source-search";
+
 import { isWasm, lineToWasmOffset, wasmOffsetToLine } from "../wasm";
 import { shouldPrettyPrint } from "../source";
 import { isOriginalId } from "devtools-source-map";

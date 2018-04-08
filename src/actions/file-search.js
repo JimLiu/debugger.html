@@ -4,15 +4,20 @@
 
 // @flow
 
-import { find, findNext, findPrev, removeOverlay } from "../utils/editor";
-import { getMatches } from "../workers/search";
+import {
+  find,
+  findNext,
+  findPrev,
+  findMatches,
+  closeSearch
+} from "../utils/monaco";
+// import { getMatches } from "../workers/search";
 import type { ThunkArgs } from "./types";
 
 import {
   getSelectedSource,
   getFileSearchModifiers,
-  getFileSearchQuery,
-  getFileSearchResults
+  getFileSearchQuery
 } from "../selectors";
 
 import {
@@ -81,18 +86,25 @@ export function searchContents(query: string, editor: Object) {
       return;
     }
 
-    const ctx = { ed: editor, cm: editor.codeMirror };
     const _modifiers = modifiers.toJS();
-    const matches = await getMatches(
-      query,
-      selectedSource.get("text"),
-      _modifiers
-    );
+    const { editor: monaco } = editor;
+    const ctx = {
+      ed: editor,
+      monaco
+    };
 
     const res = find(ctx, query, true, _modifiers);
     if (!res) {
       return;
     }
+
+    const matches = findMatches(ctx);
+
+    // const matches = await getMatches(
+    //   query,
+    //   selectedSource.get("text"),
+    //   _modifiers
+    // );
 
     const { ch, line } = res;
 
@@ -106,11 +118,17 @@ export function traverseResults(rev: boolean, editor: Editor) {
       return;
     }
 
-    const ctx = { ed: editor, cm: editor.codeMirror };
+    const { editor: monaco } = editor;
+    const ctx = {
+      ed: editor,
+      monaco
+    };
 
     const query = getFileSearchQuery(getState());
     const modifiers = getFileSearchModifiers(getState());
-    const { matches } = getFileSearchResults(getState());
+
+    // const { matches } = getFileSearchResults(getState());
+    const matches = findMatches(ctx);
 
     if (query === "") {
       dispatch(setActiveSearch("file"));
@@ -137,8 +155,8 @@ export function closeFileSearch(editor: Editor) {
     const query = getFileSearchQuery(getState());
 
     if (editor && modifiers) {
-      const ctx = { ed: editor, cm: editor.codeMirror };
-      removeOverlay(ctx, query, modifiers.toJS());
+      const ctx = { ed: editor, monaco: editor.editor };
+      closeSearch(ctx, query, modifiers.toJS());
     }
 
     dispatch(setFileSearchQuery(""));
